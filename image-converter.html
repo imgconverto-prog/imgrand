@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Image Converter — Multi Tool</title>
+  <style>
+    :root{
+      --blue: #0ea5ff; /* bright blue */
+      --blue-dark: #0284c7;
+      --bg: #ffffff;
+      --muted: #6b7280;
+      --radius: 14px;
+      --max-width: 920px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg,var(--bg) 0%, #f7faff 100%);
+      color:#0b1220;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    .container{
+      width:100%;
+      max-width:var(--max-width);
+      background: #fff;
+      border-radius:20px;
+      box-shadow: 0 10px 30px rgba(2,132,199,0.08);
+      padding:20px;
+      display:grid;
+      grid-template-columns: 1fr 420px;
+      gap:18px;
+    }
+
+    header.app-head{grid-column:1/-1;display:flex;align-items:center;gap:12px}
+    .logo{
+      width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--blue-dark));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px
+    }
+    h1{font-size:18px;margin:0}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    /* Left panel - controls */
+    .controls{
+      padding:14px;border-radius:12px;border:1px solid rgba(14,165,255,0.06);
+      display:flex;flex-direction:column;gap:12px;min-height:280px
+    }
+
+    .dropzone{
+      border:2px dashed rgba(14,165,255,0.22);
+      border-radius:10px;padding:18px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;cursor:pointer;background:linear-gradient(180deg,rgba(14,165,255,0.02),transparent)
+    }
+    .dropzone.dragover{background:linear-gradient(180deg,rgba(14,165,255,0.06),transparent);border-color:var(--blue-dark)}
+    .dropzone input{display:none}
+    .controls-row{display:flex;gap:10px;flex-wrap:wrap}
+
+    label.small{font-size:12px;color:var(--muted)}
+    select, input[type=range], input[type=number], input[type=file], button{font-family:inherit}
+    select, input[type=number]{padding:8px;border-radius:8px;border:1px solid #e6eef7;background:#fff}
+
+    .actions{display:flex;gap:8px}
+    .btn{
+      appearance:none;border:0;padding:10px 14px;border-radius:10px;background:var(--blue);color:white;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(14,165,255,0.14)
+    }
+    .btn.ghost{background:transparent;color:var(--blue);border:1px solid rgba(14,165,255,0.12);box-shadow:none}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
+
+    /* Right panel - preview */
+    .preview-card{padding:14px;border-radius:12px;border:1px solid rgba(2,132,199,0.06);display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:flex-start}
+    .preview-wrap{width:100%;height:320px;border-radius:10px;background:#f6fbff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .preview-wrap img{max-width:100%;max-height:100%;object-fit:contain}
+    .meta{width:100%;display:flex;justify-content:space-between;gap:8px;align-items:center}
+    .meta .info{font-size:13px;color:var(--muted)}
+
+    .download-links{display:flex;gap:8px;flex-wrap:wrap}
+
+    /* Responsive */
+    @media (max-width:920px){
+      .container{grid-template-columns:1fr;}
+      .preview-wrap{height:260px}
+    }
+    @media (max-width:480px){
+      body{padding:12px}
+      .logo{width:44px;height:44px;font-size:16px}
+      .preview-wrap{height:220px}
+      .btn{padding:10px}
+    }
+
+    footer.note{grid-column:1/-1;color:var(--muted);font-size:12px;text-align:center;margin-top:4px}
+  </style>
+</head>
+<body>
+  <div class="container" role="application" aria-label="Image converter tool">
+    <header class="app-head">
+      <div class="logo">IC</div>
+      <div>
+        <h1>Image Converter &amp; Compressor</h1>
+        <p class="lead">Upload, preview, convert and download images — supports JPEG, PNG, WEBP (and BMP where supported). Mobile responsive.</p>
+      </div>
+    </header>
+
+    <section class="controls" aria-labelledby="controls-title">
+      <h2 id="controls-title" style="font-size:14px;margin:0">Upload & Options</h2>
+
+      <div class="dropzone" id="dropzone" tabindex="0">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3v9" stroke="#0284c7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M21 15a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2 4 4 0 0 1 4-4h1" stroke="#0ea5ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div style="font-weight:600;color:var(--blue-dark)">Click or drop image here</div>
+        <div style="font-size:13px;color:var(--muted)">PNG, JPG, JPEG, WEBP, GIF (first frame), BMP — max 20MB</div>
+        <input id="fileInput" type="file" accept="image/*" />
+      </div>
+
+      <div class="controls-row">
+        <div style="flex:1">
+          <label class="small">Output format</label>
+          <select id="formatSelect" aria-label="Select output format">
+            <option value="image/webp">WebP (smallest)</option>
+            <option value="image/jpeg">JPEG</option>
+            <option value="image/png">PNG</option>
+            <option value="image/bmp">BMP (browser support varies)</option>
+          </select>
+        </div>
+
+        <div style="width:130px">
+          <label class="small">Quality</label>
+          <input id="qualityRange" type="range" min="10" max="100" value="82" />
+        </div>
+
+        <div style="width:100px">
+          <label class="small">Max width</label>
+          <input id="widthInput" type="number" min="16" placeholder="auto" />
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="convertBtn" class="btn" disabled>Convert & Compress</button>
+        <button id="resetBtn" class="btn ghost" type="button">Reset</button>
+      </div>
+
+      <div style="font-size:13px;color:var(--muted)">Tip: Move the quality slider lower to reduce file size. PNG ignores quality in most browsers. WebP/JPEG respect it.</div>
+    </section>
+
+    <aside class="preview-card" aria-label="Preview card">
+      <div class="preview-wrap" id="previewWrap">
+        <div id="emptyState" style="text-align:center;color:var(--muted)">
+          <div style="font-weight:600">No image selected</div>
+          <div style="font-size:13px">Preview will appear here</div>
+        </div>
+        <img id="previewImg" alt="Preview" style="display:none" />
+      </div>
+
+      <div class="meta">
+        <div class="info" id="fileInfo">Size: — &nbsp; • &nbsp; Dimensions: —</div>
+        <div class="download-links">
+          <a id="downloadLink" class="btn ghost" style="text-decoration:none;display:none" download>Download</a>
+        </div>
+      </div>
+
+      <div style="width:100%;display:flex;gap:8px">
+        <button id="previewBtn" class="btn ghost" style="flex:1;display:none">Open in new tab</button>
+        <button id="copyBtn" class="btn" style="flex:1;display:none">Copy Image</button>
+      </div>
+    </aside>
+
+    <footer class="note">Converted in your browser — no files uploaded to a server.</footer>
+  </div>
+
+  <script>
+    // Elements
+    const fileInput = document.getElementById('fileInput');
+    const dropzone = document.getElementById('dropzone');
+    const previewImg = document.getElementById('previewImg');
+    const emptyState = document.getElementById('emptyState');
+    const fileInfo = document.getElementById('fileInfo');
+    const formatSelect = document.getElementById('formatSelect');
+    const qualityRange = document.getElementById('qualityRange');
+    const widthInput = document.getElementById('widthInput');
+    const convertBtn = document.getElementById('convertBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const downloadLink = document.getElementById('downloadLink');
+    const previewWrap = document.getElementById('previewWrap');
+    const previewBtn = document.getElementById('previewBtn');
+    const copyBtn = document.getElementById('copyBtn');
+
+    let currentFile = null;
+    let currentBlobUrl = null;
+
+    function humanFileSize(bytes){
+      const thresh = 1024;
+      if (Math.abs(bytes) < thresh) return bytes + ' B';
+      const units = ['KB','MB','GB','TB'];
+      let u = -1;
+      do { bytes /= thresh; ++u; } while(Math.abs(bytes) >= thresh && u < units.length - 1);
+      return bytes.toFixed(1)+' '+units[u];
+    }
+
+    function reset(){
+      currentFile = null;
+      if(currentBlobUrl){URL.revokeObjectURL(currentBlobUrl); currentBlobUrl=null}
+      previewImg.style.display='none';
+      emptyState.style.display='block';
+      fileInfo.textContent = 'Size: — • Dimensions: —';
+      convertBtn.disabled = true;
+      downloadLink.style.display='none';
+      previewBtn.style.display='none';
+      copyBtn.style.display='none';
+      fileInput.value='';
+      widthInput.value='';
+    }
+
+    resetBtn.addEventListener('click', reset);
+
+    // Drag & drop
+    ['dragenter','dragover'].forEach(ev=>{
+      dropzone.addEventListener(ev, e=>{e.preventDefault();e.stopPropagation();dropzone.classList.add('dragover')});
+    });
+    ['dragleave','drop'].forEach(ev=>{
+      dropzone.addEventListener(ev, e=>{e.preventDefault();e.stopPropagation();dropzone.classList.remove('dragover')});
+    });
+    dropzone.addEventListener('drop', e=>{
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if(f) handleFile(f);
+    });
+    dropzone.addEventListener('click', ()=>fileInput.click());
+    fileInput.addEventListener('change', e=>{const f=e.target.files[0]; if(f) handleFile(f)});
+
+    function handleFile(file){
+      if(!file.type.startsWith('image/')){alert('Please upload an image file'); return}
+      if(file.size > 20 * 1024 * 1024){alert('File too large. Max 20MB.'); return}
+      currentFile = file;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          emptyState.style.display='none';
+          previewImg.src = ev.target.result;
+          previewImg.style.display='block';
+          fileInfo.textContent = `Size: ${humanFileSize(file.size)} • Dimensions: ${img.width}×${img.height}`;
+          convertBtn.disabled = false;
+          previewBtn.style.display='none';
+          copyBtn.style.display='none';
+          downloadLink.style.display='none';
+          // store natural size on dataset
+          previewImg.dataset.naturalWidth = img.width;
+          previewImg.dataset.naturalHeight = img.height;
+        };
+        img.onerror = ()=>{alert('Could not read image.');}
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Convert & compress
+    convertBtn.addEventListener('click', async ()=>{
+      if(!currentFile) return;
+      convertBtn.disabled = true; convertBtn.textContent='Processing...';
+      try{
+        const img = new Image();
+        const dataUrl = await fileToDataURL(currentFile);
+        img.src = dataUrl;
+        await img.decode();
+
+        let targetWidth = parseInt(widthInput.value) || img.naturalWidth;
+        // keep aspect
+        const scale = targetWidth / img.naturalWidth;
+        const targetHeight = Math.round(img.naturalHeight * scale);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        const mime = formatSelect.value;
+        const quality = Math.max(0.01, Math.min(1, qualityRange.value / 100));
+
+        // toBlob with fallback to toDataURL
+        const blob = await new Promise((resolve)=>{
+          // Some browsers ignore quality for PNG; some don't support bmp mime
+          if(canvas.toBlob) {
+            try{
+              canvas.toBlob(b=>resolve(b), mime, (mime==='image/png' ? undefined : quality));
+            }catch(e){
+              // fallback
+              const url = canvas.toDataURL(mime, quality);
+              const bb = dataURLtoBlob(url);
+              resolve(bb);
+            }
+          } else {
+            const url = canvas.toDataURL(mime, quality);
+            const bb = dataURLtoBlob(url);
+            resolve(bb);
+          }
+        });
+
+        if(!blob){
+          alert('Conversion failed — format may not be supported by your browser. Try WebP or JPEG.');
+          return;
+        }
+
+        if(currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+        currentBlobUrl = URL.createObjectURL(blob);
+
+        downloadLink.href = currentBlobUrl;
+        // choose extension from mime
+        const ext = mime.split('/')[1].split('+')[0];
+        const baseName = (currentFile.name || 'image').replace(/\.[^/.]+$/, '');
+        downloadLink.download = `${baseName}_converted.${ext}`;
+        downloadLink.style.display='inline-block';
+
+        previewBtn.style.display='inline-block';
+        copyBtn.style.display='inline-block';
+
+        // update preview image to new blob
+        previewImg.src = currentBlobUrl;
+        fileInfo.textContent = `Size: ${humanFileSize(blob.size)} • Dimensions: ${canvas.width}×${canvas.height}`;
+
+      }catch(err){
+        console.error(err);
+        alert('Something went wrong while converting the image');
+      } finally{
+        convertBtn.disabled=false; convertBtn.textContent='Convert & Compress';
+      }
+    });
+
+    previewBtn.addEventListener('click', ()=>{
+      if(!currentBlobUrl) return; window.open(currentBlobUrl, '_blank');
+    });
+
+    copyBtn.addEventListener('click', async ()=>{
+      if(!currentBlobUrl) return;
+      try{
+        const data = await fetch(currentBlobUrl);
+        const blob = await data.blob();
+        await navigator.clipboard.write([new ClipboardItem({[blob.type]: blob})]);
+        alert('Image copied to clipboard');
+      }catch(e){
+        alert('Copy failed — your browser may not support copying images to clipboard.');
+      }
+    });
+
+    // Helpers
+    function fileToDataURL(file){
+      return new Promise((res,rej)=>{
+        const r = new FileReader();
+        r.onload = e=>res(e.target.result);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+    }
+
+    function dataURLtoBlob(dataurl){
+      const arr = dataurl.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while(n--) u8arr[n] = bstr.charCodeAt(n);
+      return new Blob([u8arr], {type:mime});
+    }
+
+    // Accessibility: keyboard support for dropzone
+    dropzone.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); fileInput.click(); } });
+
+    // Initialize
+    reset();
+  </script>
+</body>
+</html>
